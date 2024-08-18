@@ -41,6 +41,8 @@ dependencies:
   firebase_auth: ^4.20.0
   google_fonts: 6.2.1
   shared_preferences: ^2.0.13
+  image_picker: ^0.8.7+3
+  permission_handler: ^10.2.0
 
 dev_dependencies:
   flutter_test:

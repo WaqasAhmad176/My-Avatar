@@ -23,7 +23,6 @@ class LoginScreen extends StatelessWidget {
     final userCredential =
         await FirebaseAuth.instance.signInWithCredential(credential);
 
-    // Save login state
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isLoggedIn', true);
 
@@ -33,108 +32,183 @@ class LoginScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: const Color(0x00201d1d),
       body: Stack(
-        fit: StackFit.expand,
         children: <Widget>[
-          // Background image
-          Container(
-            decoration: const BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage("assets/splash_background.png"),
-                fit: BoxFit.cover,
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              height: MediaQuery.of(context).size.height,
+              decoration: const BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage("assets/login_background.png"),
+                  fit: BoxFit.none,
+                ),
               ),
             ),
           ),
-          // Main content
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              // Logo
-              SizedBox(
-                width: 120.0,
-                child: Image.asset("assets/logo.png"),
-              ),
-              const SizedBox(height: 16.0),
-              // Title and Subtitle
-              Text(
-                "MyAvatar",
-                style: GoogleFonts.dongle(
-                  fontSize: 40.0,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                SizedBox(
+                  width: 250.0,
+                  child: Image.asset("assets/logo.png"),
                 ),
-              ),
-              const SizedBox(height: 8.0),
-              Text(
-                "Generate Stunning AI Portraits!",
-                style: GoogleFonts.poppins(
-                  fontSize: 16.0,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 32.0),
-              // Google Sign-In Button
-              ElevatedButton.icon(
-                onPressed: () async {
-                  try {
-                    UserCredential userCredential = await signInWithGoogle();
-                    Get.offNamed(AppRoutes
-                        .home); // Navigate to Home Screen upon successful login
-                  } catch (e) {
-                    print("Error signing in with Google: $e");
-                  }
-                },
-                icon: const Icon(Icons.login, color: Colors.white),
-                label: Text(
-                  "Continue with Google",
-                  style: GoogleFonts.poppins(color: Colors.white),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.grey[800],
-                  padding: const EdgeInsets.symmetric(
-                      vertical: 12.0, horizontal: 20.0),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.0),
+                RichText(
+                  text: TextSpan(
+                    children: [
+                      TextSpan(
+                        text: "M y ",
+                        style: GoogleFonts.dongle(
+                          fontSize: 50.0,
+                          fontWeight: FontWeight.w200,
+                          color: Colors.white,
+                        ),
+                      ),
+                      TextSpan(
+                        text: "A v a t a r",
+                        style: GoogleFonts.dongle(
+                          fontSize: 50.0,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 16.0),
-              // Apple Sign-In Button
-              ElevatedButton.icon(
-                onPressed: () {
-                  // Add your Apple Sign-In logic here
-                },
-                icon: const Icon(Icons.apple, color: Colors.white),
-                label: Text(
-                  "Continue with Apple",
-                  style: GoogleFonts.poppins(color: Colors.white),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.grey[800],
-                  padding: const EdgeInsets.symmetric(
-                      vertical: 12.0, horizontal: 20.0),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.0),
+                RichText(
+                  text: TextSpan(
+                    children: [
+                      TextSpan(
+                        text: "Generate Stunning ",
+                        style: GoogleFonts.poppins(
+                          fontSize: 24.0,
+                          fontWeight: FontWeight.w200,
+                          color: Colors.white,
+                        ),
+                      ),
+                      TextSpan(
+                        text: "AI Portraits!",
+                        style: GoogleFonts.poppins(
+                          fontSize: 24.0,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 16.0),
-              // Terms & Conditions Text
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: Center(
-                  child: Text(
-                    "By continuing, you accept our Terms & Conditions and acknowledge receipt of our Privacy & Cookies Policy.",
-                    style: GoogleFonts.poppins(
-                      fontSize: 12.0,
-                      color: Colors.white54,
+                const SizedBox(height: 124.0),
+                Text(
+                  "Login / Signup",
+                  style: GoogleFonts.poppins(
+                    fontSize: 20.0,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 32.0),
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    try {
+                      UserCredential userCredential = await signInWithGoogle();
+                      Get.offNamed(AppRoutes.home);
+                    } catch (e) {
+                      print("Error signing in with Google: $e");
+                    }
+                  },
+                  icon: const Icon(Icons.login, color: Colors.white),
+                  label: Text(
+                    "Continue with Google",
+                    style: GoogleFonts.poppins(color: Colors.white),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0x00BEBEBE),
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 12.0, horizontal: 30.0),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                      side: const BorderSide(color: Colors.white),
                     ),
-                    textAlign: TextAlign.center,
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 16.0),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    // Add your Apple Sign-In logic here
+                  },
+                  icon: const Icon(Icons.apple, color: Colors.white),
+                  label: Text(
+                    "Continue with Apple",
+                    style: GoogleFonts.poppins(color: Colors.white),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0x00BEBEBE),
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 12.0, horizontal: 36.0),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                      side: const BorderSide(color: Colors.white),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 40.0),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  child: Center(
+                    child: RichText(
+                      text: TextSpan(
+                        children: [
+                          TextSpan(
+                            text: "By continuing, you accept our ",
+                            style: GoogleFonts.poppins(
+                              fontSize: 13.0,
+                              color: Colors.white54,
+                            ),
+                          ),
+                          TextSpan(
+                            text: "Terms & Conditions",
+                            style: GoogleFonts.poppins(
+                              fontSize: 13.0,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          TextSpan(
+                            text: " and ",
+                            style: GoogleFonts.poppins(
+                              fontSize: 13.0,
+                              color: Colors.white54,
+                            ),
+                          ),
+                          TextSpan(
+                            text: " acknowledge receipt of our ",
+                            style: GoogleFonts.poppins(
+                              fontSize: 13.0,
+                              color: Colors.white54,
+                            ),
+                          ),
+                          TextSpan(
+                            text: "Privacy & Cookie Policy.",
+                            style: GoogleFonts.poppins(
+                              fontSize: 12.0,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 64.0),
+              ],
+            ),
           ),
         ],
       ),
