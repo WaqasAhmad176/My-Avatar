@@ -40,13 +40,23 @@ class LoginScreen extends StatelessWidget {
             left: 0,
             right: 0,
             child: Container(
-              height: MediaQuery.of(context).size.height,
+              height: MediaQuery.of(context).size.height * 0.6,
               decoration: const BoxDecoration(
                 image: DecorationImage(
                   image: AssetImage("assets/login_background.png"),
-                  fit: BoxFit.none,
+                  fit: BoxFit.cover,
                 ),
               ),
+            ),
+          ),
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Image.asset(
+              "assets/bottom_shadow.png", // Your gradient image asset
+              fit: BoxFit.cover,
+              height: 1600.0,
             ),
           ),
           Align(
@@ -64,7 +74,7 @@ class LoginScreen extends StatelessWidget {
                       TextSpan(
                         text: "M y ",
                         style: GoogleFonts.dongle(
-                          fontSize: 50.0,
+                          fontSize: 45.0,
                           fontWeight: FontWeight.w200,
                           color: Colors.white,
                         ),
@@ -72,7 +82,7 @@ class LoginScreen extends StatelessWidget {
                       TextSpan(
                         text: "A v a t a r",
                         style: GoogleFonts.dongle(
-                          fontSize: 50.0,
+                          fontSize: 45.0,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                         ),
@@ -121,7 +131,8 @@ class LoginScreen extends StatelessWidget {
                       print("Error signing in with Google: $e");
                     }
                   },
-                  icon: const Icon(Icons.login, color: Colors.white),
+                  icon: Image.asset('assets/google_logo.webp',
+                      width: 24, height: 24),
                   label: Text(
                     "Continue with Google",
                     style: GoogleFonts.poppins(color: Colors.white),
@@ -206,7 +217,7 @@ class LoginScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(height: 64.0),
+                const SizedBox(height: 45.0),
               ],
             ),
           ),
