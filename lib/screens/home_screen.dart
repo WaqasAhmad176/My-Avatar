@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:my_avatar/screens/CustomCameraScreen.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -124,14 +125,13 @@ class HomeScreen extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       _buildDropdownButton(
-
                         context,
                         label: "Selfie",
                         items: [
-                          DropdownMenuItem(
+                          const DropdownMenuItem(
                             value: 'camera',
                             child: Row(
-                              children: const [
+                              children: [
                                 Icon(Icons.camera_alt, color: Colors.white),
                                 SizedBox(width: 8),
                                 Text("Camera"),
@@ -141,7 +141,13 @@ class HomeScreen extends StatelessWidget {
                         ],
                         onChanged: (value) {
                           if (value == 'camera') {
-                            _openCamera(context);
+                            // _openCamera(context);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) =>
+                                      const CustomCameraScreen()),
+                            );
                           }
                         },
                       ),
@@ -267,5 +273,3 @@ class HomeScreen extends StatelessWidget {
     );
   }
 }
-
-
