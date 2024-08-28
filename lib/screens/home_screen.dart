@@ -106,10 +106,13 @@ class HomeScreen extends StatelessWidget {
       body: Stack(
         children: [
           Center(
-            child: Text(
-              "Add all the details, select a theme & hit Generate!",
-              style: GoogleFonts.poppins(fontSize: 16.0, color: Colors.white),
-              textAlign: TextAlign.center,
+            child: Padding(
+              padding: const EdgeInsets.all(80.0),
+              child: Text(
+                "Add all the details, select a theme & hit Generate!",
+                style: GoogleFonts.poppins(fontSize: 16.0, color: Colors.white),
+                textAlign: TextAlign.center,
+              ),
             ),
           ),
           Positioned(

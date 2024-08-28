@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:logger/logger.dart';
-
 
 class CustomCameraScreen extends StatefulWidget {
   const CustomCameraScreen({super.key});
@@ -13,17 +11,17 @@ class CustomCameraScreen extends StatefulWidget {
   _CustomCameraScreenState createState() => _CustomCameraScreenState();
 }
 
-class _CustomCameraScreenState extends State<CustomCameraScreen> {
+class _CustomCameraScreenState extends State<CustomCameraScreen>
+    with WidgetsBindingObserver {
   CameraController? _cameraController;
   List<CameraDescription>? cameras;
   int selectedCameraIndex = 0;
   XFile? imageFile;
 
-  var logger = Logger();
-
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initializeCamera();
   }
 
@@ -33,7 +31,7 @@ class _CustomCameraScreenState extends State<CustomCameraScreen> {
     if (!status.isGranted) {
       // If permission is not granted, show a message and exit
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
             content:
                 Text('Camera permission is required to use this feature.')),
       );
@@ -47,7 +45,7 @@ class _CustomCameraScreenState extends State<CustomCameraScreen> {
         _setupCamera(selectedCameraIndex);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No cameras found on this device.')),
+          SnackBar(content: Text('No cameras found on this device.')),
         );
       }
     } catch (e) {
@@ -90,7 +88,6 @@ class _CustomCameraScreenState extends State<CustomCameraScreen> {
         imageFile = await _cameraController!.takePicture();
         setState(() {});
         print('Captured image path: ${imageFile!.path}');
-        logger.d('Captured image path: ${imageFile!.path}');
       } catch (e) {
         print('Error capturing image: $e');
         ScaffoldMessenger.of(context).showSnackBar(
@@ -113,6 +110,7 @@ class _CustomCameraScreenState extends State<CustomCameraScreen> {
   @override
   void dispose() {
     _cameraController?.dispose();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
@@ -189,42 +187,33 @@ class _CustomCameraScreenState extends State<CustomCameraScreen> {
       ),
       body: _cameraController == null || !_cameraController!.value.isInitialized
           ? const Center(child: CircularProgressIndicator())
-          : Stack(
+          : Column(
               children: [
-                // Full-screen camera preview
-                Positioned.fill(
+                Expanded(
                   child: CameraPreview(_cameraController!),
                 ),
-                // Positioned buttons at the bottom
-                Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 25.0, horizontal: 55.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        _buildRoundedButton(
-                          icon: Icons.file_upload_outlined,
-                          onPressed: _pickImageFromGallery,
-                          size: 70.0,
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 10.0),
-                          // Add more padding to the middle button
-                          child: _buildRoundedButton(
-                            icon: Icons.camera_alt,
-                            onPressed: _captureImage,
-                            size: 80.0, // Larger button in the middle
-                          ),
-                        ),
-                        _buildRoundedButton(
-                          icon: Icons.cameraswitch_outlined,
-                          onPressed: _switchCamera,
-                          size: 70.0,
-                        ),
-                      ],
-                    ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                      vertical: 16.0, horizontal: 45.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildRoundedButton(
+                        icon: Icons.file_upload_outlined,
+                        onPressed: _pickImageFromGallery,
+                        size: 65.0,
+                      ),
+                      _buildRoundedButton(
+                        icon: Icons.camera_alt_rounded,
+                        onPressed: _captureImage,
+                        size: 80.0, // Larger button in the middle
+                      ),
+                      _buildRoundedButton(
+                        icon: Icons.cameraswitch_rounded,
+                        onPressed: _switchCamera,
+                        size: 65.0,
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -245,7 +234,11 @@ class _CustomCameraScreenState extends State<CustomCameraScreen> {
         shape: BoxShape.circle,
       ),
       child: IconButton(
-        icon: Icon(icon, color: Colors.black),
+        icon: Icon(
+          icon,
+          color: Colors.black,
+          size: 35.0,
+        ),
         onPressed: onPressed,
       ),
     );
