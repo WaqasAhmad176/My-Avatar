@@ -1,34 +1,77 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:my_avatar/screens/CustomCameraScreen.dart';
-import 'package:permission_handler/permission_handler.dart';
+import 'package:my_avatar/screens/custom_camera_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+import '../api/ApiService.dart';
+import '../data/ApiRequest.dart';
+import '../data/UserDataClass.dart';
+
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
-  Future<void> _openCamera(BuildContext context) async {
-    var status = await Permission.camera.status;
-    if (!status.isGranted) {
-      status = await Permission.camera.request();
-    }
+  @override
+  _HomeScreenState createState() => _HomeScreenState();
+}
 
-    if (status.isGranted) {
-      final pickedFile =
-          await ImagePicker().pickImage(source: ImageSource.camera);
+class _HomeScreenState extends State<HomeScreen> {
+  final UserDataClass userData = UserDataClass();
+  final ApiService _apiService = ApiService();
 
-      if (pickedFile != null) {
-        // Handle the captured image file, e.g., display it or save it
-        print('Captured image path: ${pickedFile.path}');
-      } else {
-        print('No image captured.');
-      }
-    } else {
+  void _onGenerateButtonPressed(BuildContext context) async {
+    if (userData.imageUrl == null || userData.imageUrl!.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Camera permission is required to take a photo.'),
+          content: Text('Please capture or select an image first.'),
         ),
       );
+      return;
+    }
+
+    // Concatenate user data into a prompt string
+    final age = userData.age ?? 'unknown';
+    final gender = userData.sex ?? 'unknown';
+    final bodyType = userData.bodyType ?? 'unknown';
+
+    final prompt = '$age year old $gender with $bodyType body type';
+
+    final request = ApiRequest(
+      webhook: '', // Fill if required
+      input: Input(
+        prompt: prompt,
+        // Use the concatenated string here
+        style: 'realistic',
+        job_id: 1234,
+        image: userData.imageUrl!,
+        uuid: userData.uuid ?? '1234',
+        task: 'txt2img',
+        width: 1024,
+        height: 1024,
+        adjustment: -0.02,
+      ),
+    );
+
+    try {
+      final response = await _apiService.generateImage(request);
+
+      // Now, response.output should be of type Output
+      print('API Response Status: ${response.status}');
+      print('API Response Output: ${response.output.output}');
+
+      if (response.status == 'COMPLETED') {
+        // Do something with the output URLs, e.g., displaying the first image
+        final imageUrl = response.output.output.isNotEmpty
+            ? response.output.output[0]
+            : null;
+        if (imageUrl != null) {
+          // Display or process the imageUrl
+          print('Generated Image URL: $imageUrl');
+        }
+      } else {
+        print('Image generation failed.');
+      }
+    } catch (e) {
+      // Handle error here
+      print('API Response Error: $e');
     }
   }
 
@@ -127,99 +170,125 @@ class HomeScreen extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      _buildDropdownButton(
-                        context,
-                        label: "Selfie",
-                        items: [
-                          const DropdownMenuItem(
-                            value: 'camera',
-                            child: Row(
-                              children: [
-                                Icon(Icons.camera_alt, color: Colors.white),
-                                SizedBox(width: 8),
-                                Text("Camera"),
-                              ],
+                      Expanded(
+                        child: _buildDropdownButton(
+                          context,
+                          label: "Selfie",
+                          items: [
+                            const DropdownMenuItem(
+                              value: 'camera',
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.camera_alt, color: Colors.white),
+                                  SizedBox(width: 8),
+                                  Text("Camera"),
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
-                        onChanged: (value) {
-                          if (value == 'camera') {
-                            // _openCamera(context);
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) =>
-                                      const CustomCameraScreen()),
-                            );
-                          }
-                        },
-                      ),
-                      _buildDropdownButton(
-                        context,
-                        label: "Age",
-                        items: List.generate(
-                          100,
-                          (index) => DropdownMenuItem(
-                            value: (index + 1).toString(),
-                            child: Text(
-                              (index + 1).toString(),
-                              style: const TextStyle(color: Colors.white),
-                            ),
-                          ),
+                          ],
+                          onChanged: (value) {
+                            if (value == 'camera') {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => CustomCameraScreen(
+                                    onImageCaptured: (imageUrl, uuid) {
+                                      setState(() {
+                                        userData.imageUrl = imageUrl;
+                                        userData.uuid = uuid;
+                                      });
+                                    },
+                                  ),
+                                ),
+                              );
+                            }
+                          },
                         ),
-                        onChanged: (value) {
-                          // Handle age selection
-                        },
                       ),
-                      _buildDropdownButton(
-                        context,
-                        label: "Sex",
-                        items: const [
-                          DropdownMenuItem(
-                            value: 'male',
-                            child: Text("Male",
-                                style: TextStyle(color: Colors.white)),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: _buildDropdownButton(
+                          context,
+                          label: "Age",
+                          items: List.generate(
+                            100,
+                            (index) => DropdownMenuItem(
+                              value: (index + 1).toString(),
+                              child: Text(
+                                (index + 1).toString(),
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                            ),
                           ),
-                          DropdownMenuItem(
-                            value: 'female',
-                            child: Text("Female",
-                                style: TextStyle(color: Colors.white)),
-                          ),
-                        ],
-                        onChanged: (value) {
-                          // Handle sex selection
-                        },
+                          onChanged: (value) {
+                            setState(() {
+                              userData.age = value;
+                            });
+                          },
+                        ),
                       ),
-                      _buildDropdownButton(
-                        context,
-                        label: "Body",
-                        items: const [
-                          DropdownMenuItem(
-                            value: 'slim',
-                            child: Text("Slim",
-                                style: TextStyle(color: Colors.white)),
-                          ),
-                          DropdownMenuItem(
-                            value: 'regular',
-                            child: Text("Regular",
-                                style: TextStyle(color: Colors.white)),
-                          ),
-                          DropdownMenuItem(
-                            value: 'plus',
-                            child: Text("Plus",
-                                style: TextStyle(color: Colors.white)),
-                          ),
-                        ],
-                        onChanged: (value) {
-                          // Handle body type selection
-                        },
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: _buildDropdownButton(
+                          context,
+                          label: "Sex",
+                          items: const [
+                            DropdownMenuItem(
+                              value: 'male',
+                              child: Text("Male",
+                                  style: TextStyle(color: Colors.white)),
+                            ),
+                            DropdownMenuItem(
+                              value: 'female',
+                              child: Text("Female",
+                                  style: TextStyle(color: Colors.white)),
+                            ),
+                          ],
+                          onChanged: (value) {
+                            setState(() {
+                              userData.sex = value;
+                            });
+                          },
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: _buildDropdownButton(
+                          context,
+                          label: "Body",
+                          items: const [
+                            DropdownMenuItem(
+                              value: 'slim',
+                              child: Text("Slim",
+                                  style: TextStyle(color: Colors.white)),
+                            ),
+                            DropdownMenuItem(
+                              value: 'regular',
+                              child: Text("Regular",
+                                  style: TextStyle(color: Colors.white)),
+                            ),
+                            DropdownMenuItem(
+                              value: 'plus',
+                              child: Text("Plus",
+                                  style: TextStyle(color: Colors.white)),
+                            ),
+                          ],
+                          onChanged: (value) {
+                            setState(() {
+                              userData.bodyType = value;
+                            });
+                          },
+                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16.0),
                   ElevatedButton(
                     onPressed: () {
-                      // Handle generate action
+                      _onGenerateButtonPressed(context);
+                      print("userData.toJson() Called");
+                      print(userData.toJson());
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.grey[800],
@@ -270,8 +339,12 @@ class HomeScreen extends StatelessWidget {
         onChanged: onChanged,
         dropdownColor: Colors.grey[850],
         iconEnabledColor: Colors.white,
+        isExpanded: true,
+        // Ensure the dropdown takes up the available space
         underline: Container(),
         style: GoogleFonts.poppins(color: Colors.white),
+        menuMaxHeight: MediaQuery.of(context).size.height /
+            2, // Limit the dropdown height to half the screen
       ),
     );
   }
