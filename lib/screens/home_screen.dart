@@ -10,12 +10,29 @@ class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  _HomeScreenState createState() => _HomeScreenState();
+  _HomeScreenState createState() {
+    return _HomeScreenState();
+  }
 }
 
 class _HomeScreenState extends State<HomeScreen> {
   final UserDataClass userData = UserDataClass();
   final ApiService _apiService = ApiService();
+
+  String? initialImageUrl;
+  String? initialAge;
+  String? initialSex;
+  String? initialBodyType;
+
+  @override
+  void initState() {
+    super.initState();
+    // Store initial values
+    initialImageUrl = userData.imageUrl;
+    initialAge = userData.age;
+    initialSex = userData.sex;
+    initialBodyType = userData.bodyType;
+  }
 
   void _onGenerateButtonPressed(BuildContext context) async {
     if (userData.imageUrl == null || userData.imageUrl!.isEmpty) {
@@ -27,18 +44,32 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    // Concatenate user data into a prompt string
-    final age = userData.age ?? 'unknown';
-    final gender = userData.sex ?? 'unknown';
-    final bodyType = userData.bodyType ?? 'unknown';
+    final age = userData.age;
+    final gender = userData.sex;
+    final bodyType = userData.bodyType;
 
-    final prompt = '$age year old $gender with $bodyType body type';
+    // Check if any of age, gender, or bodyType is null or empty
+    if (age == null ||
+        age.isEmpty ||
+        gender == null ||
+        gender.isEmpty ||
+        bodyType == null ||
+        bodyType.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'Please provide all user details (age, gender, and body type).'),
+        ),
+      );
+      return;
+    }
+
+    final prompt = '$age year old, $bodyType face, $gender gender';
 
     final request = ApiRequest(
       webhook: '', // Fill if required
       input: Input(
         prompt: prompt,
-        // Use the concatenated string here
         style: 'realistic',
         job_id: 1234,
         image: userData.imageUrl!,
@@ -53,18 +84,23 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final response = await _apiService.generateImage(request);
 
-      // Now, response.output should be of type Output
       print('API Response Status: ${response.status}');
       print('API Response Output: ${response.output.output}');
 
       if (response.status == 'COMPLETED') {
-        // Do something with the output URLs, e.g., displaying the first image
         final imageUrl = response.output.output.isNotEmpty
             ? response.output.output[0]
             : null;
         if (imageUrl != null) {
           // Display or process the imageUrl
           print('Generated Image URL: $imageUrl');
+          // Reset dropdowns to original values
+          setState(() {
+            userData.imageUrl = initialImageUrl;
+            userData.age = initialAge;
+            userData.sex = initialSex;
+            userData.bodyType = initialBodyType;
+          });
         }
       } else {
         print('Image generation failed.');
@@ -78,9 +114,9 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: const Color(0xFF201D1D),
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: const Color(0xFF201D1D),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
@@ -173,7 +209,20 @@ class _HomeScreenState extends State<HomeScreen> {
                       Expanded(
                         child: _buildDropdownButton(
                           context,
-                          label: "Selfie",
+                          label: userData.imageUrl != null &&
+                                  userData.imageUrl!.isNotEmpty
+                              ? Container(
+                                  width: 32,
+                                  height: 32,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    image: DecorationImage(
+                                      image: NetworkImage(userData.imageUrl!),
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                )
+                              : "Selfie",
                           items: [
                             const DropdownMenuItem(
                               value: 'camera',
@@ -206,11 +255,14 @@ class _HomeScreenState extends State<HomeScreen> {
                           },
                         ),
                       ),
-                      SizedBox(width: 8),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: _buildDropdownButton(
                           context,
-                          label: "Age",
+                          label:
+                              userData.age != null && userData.age!.isNotEmpty
+                                  ? userData.age
+                                  : "Age",
                           items: List.generate(
                             100,
                             (index) => DropdownMenuItem(
@@ -228,19 +280,22 @@ class _HomeScreenState extends State<HomeScreen> {
                           },
                         ),
                       ),
-                      SizedBox(width: 8),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: _buildDropdownButton(
                           context,
-                          label: "Sex",
+                          label:
+                              userData.sex != null && userData.sex!.isNotEmpty
+                                  ? userData.sex!
+                                  : "Sex",
                           items: const [
                             DropdownMenuItem(
-                              value: 'male',
+                              value: 'M',
                               child: Text("Male",
                                   style: TextStyle(color: Colors.white)),
                             ),
                             DropdownMenuItem(
-                              value: 'female',
+                              value: 'F',
                               child: Text("Female",
                                   style: TextStyle(color: Colors.white)),
                             ),
@@ -252,24 +307,27 @@ class _HomeScreenState extends State<HomeScreen> {
                           },
                         ),
                       ),
-                      SizedBox(width: 8),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: _buildDropdownButton(
                           context,
-                          label: "Body",
+                          label: userData.bodyType != null &&
+                                  userData.bodyType!.isNotEmpty
+                              ? userData.bodyType!
+                              : "Body",
                           items: const [
                             DropdownMenuItem(
-                              value: 'slim',
+                              value: 'Slim',
                               child: Text("Slim",
                                   style: TextStyle(color: Colors.white)),
                             ),
                             DropdownMenuItem(
-                              value: 'regular',
+                              value: 'Regular',
                               child: Text("Regular",
                                   style: TextStyle(color: Colors.white)),
                             ),
                             DropdownMenuItem(
-                              value: 'plus',
+                              value: 'Plus',
                               child: Text("Plus",
                                   style: TextStyle(color: Colors.white)),
                             ),
@@ -287,26 +345,37 @@ class _HomeScreenState extends State<HomeScreen> {
                   ElevatedButton(
                     onPressed: () {
                       _onGenerateButtonPressed(context);
-                      print("userData.toJson() Called");
-                      print(userData.toJson());
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.grey[800],
+                      backgroundColor: const Color(0xFFFFFFFF),
+                      // Fully transparent background
                       padding: const EdgeInsets.symmetric(
                         vertical: 12.0,
                         horizontal: 20.0,
                       ),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8.0),
+                        borderRadius: BorderRadius.circular(16.0),
+                        side: const BorderSide(
+                            color: Color(0xFF272727),
+                            width: 2.0), // Border color and width
+                      ),
+                      elevation: 0, // Remove any default elevation/shadow
+                    ),
+                    child: SizedBox(
+                      width: 250.0, // Increase button width
+                      child: Text(
+                        "Generate",
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.poppins(
+                          letterSpacing: 1.0,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFF272727), // Text color
+                          fontSize: 20.0,
+                        ),
                       ),
                     ),
-                    child: Text(
-                      "Generate",
-                      style: GoogleFonts.poppins(
-                          color: Colors.white, fontSize: 16.0),
-                    ),
                   ),
-                  const SizedBox(height: 16.0),
+                  const SizedBox(height: 50.0),
                 ],
               ),
             ),
@@ -318,7 +387,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildDropdownButton(
     BuildContext context, {
-    required String label,
+    required dynamic label,
     required List<DropdownMenuItem<String>> items,
     required ValueChanged<String?> onChanged,
   }) {
@@ -330,10 +399,12 @@ class _HomeScreenState extends State<HomeScreen> {
       child: DropdownButton<String>(
         hint: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8.0),
-          child: Text(
-            label,
-            style: GoogleFonts.poppins(color: Colors.white),
-          ),
+          child: label is String
+              ? Text(
+                  label,
+                  style: GoogleFonts.poppins(color: Colors.white),
+                )
+              : label,
         ),
         items: items,
         onChanged: onChanged,
