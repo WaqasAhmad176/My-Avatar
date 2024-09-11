@@ -1,16 +1,17 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
+// import 'package:my_avatar/data/MyAuthProvider.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+import '../data/MyAuthProvider.dart';
 import '../routes/app_routes.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
 
-  Future<UserCredential> signInWithGoogle() async {
+/*  Future<UserCredential> signInWithGoogle() async {
     final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
     final GoogleSignInAuthentication? googleAuth =
         await googleUser?.authentication;
@@ -20,14 +21,20 @@ class LoginScreen extends StatelessWidget {
       idToken: googleAuth?.idToken,
     );
 
+    // FirebaseAuth firebaseAuth = await FirebaseAuth.instance;
+
     final userCredential =
         await FirebaseAuth.instance.signInWithCredential(credential);
 
+    // User? currentUser = firebaseAuth.currentUser;
+
+    print("userCredential == $userCredential");
+    // print("userCredential2 == $currentUser");
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isLoggedIn', true);
 
     return userCredential;
-  }
+  }*/
 
   @override
   Widget build(BuildContext context) {
@@ -125,8 +132,13 @@ class LoginScreen extends StatelessWidget {
                 ElevatedButton.icon(
                   onPressed: () async {
                     try {
-                      UserCredential userCredential = await signInWithGoogle();
-                      Get.offNamed(AppRoutes.home);
+                      UserCredential userCredential =
+                          await MyAuthProvider().signInWithGoogle();
+
+                      print( "CurrentUser===");
+                      print( "CurrentUser=== ${MyAuthProvider().currentUser}");
+                      Get.offNamed(
+                          AppRoutes.home); // Navigate to the home screen
                     } catch (e) {
                       print("Error signing in with Google: $e");
                     }

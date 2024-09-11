@@ -1,12 +1,15 @@
 import 'dart:io';
 
 import 'package:camera/camera.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:uuid/uuid.dart';
+
+import '../data/MyAuthProvider.dart';
 
 class CustomCameraScreen extends StatefulWidget {
   const CustomCameraScreen({super.key, required this.onImageCaptured});
@@ -151,8 +154,13 @@ class _CustomCameraScreenState extends State<CustomCameraScreen>
 
   Future<String> _uploadImage(XFile image) async {
     String fileName = const Uuid().v4();
+
+    User? currentUser = MyAuthProvider().currentUser;
+    print( "CurrentUser===1111111 ");
+    print( "CurrentUser=== $currentUser");
+
     Reference firebaseStorageRef =
-        FirebaseStorage.instance.ref().child('images/$fileName.jpg');
+        FirebaseStorage.instance.ref().child('${currentUser?.uid}/uploaded_images/$fileName.jpg');
 
     UploadTask uploadTask = firebaseStorageRef.putFile(File(image.path));
     TaskSnapshot taskSnapshot = await uploadTask;
