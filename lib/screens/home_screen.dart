@@ -12,6 +12,7 @@ import 'package:uuid/uuid.dart';
 import '../api/ApiService.dart';
 import '../data/ApiRequest.dart';
 import '../data/UserDataClass.dart';
+import 'gallery_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -32,7 +33,8 @@ class _HomeScreenState extends State<HomeScreen> {
   String? initialBodyType;
 
   String promptInput = ''; // This will hold the predefined prompt string
-  List<String> imageUrls = [
+  List<String> imageUrls = []; // List to store multiple generated image URLs
+  List<String> assetImageUrls = [
     // Replace with your actual image URLs
     'assets/prompt_1.png',
     'assets/prompt_2.png',
@@ -46,11 +48,11 @@ class _HomeScreenState extends State<HomeScreen> {
   ];
 
   // List of predefined prompts corresponding to images
-  List<String> promptList = [
-    'Prompt for image 1',
-    'Prompt for image 2',
-    'Prompt for image 3',
-  ];
+  List<String> promptList = [];
+
+  bool isGenerating = false;
+  bool hasGenerated = false;
+  String? imageUrl;
 
   void _onGenerateButtonPressed(BuildContext context) async {
     if (userData.imageUrl == null || userData.imageUrl!.isEmpty) {
@@ -82,9 +84,11 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    final prompt =
-        // 'a closeup portrait,  headshot, a cinematic portrait, of a $gender gender super mode  who is $age year old, and has a $bodyType body typel , Mixed eclectic beauty in complementary colors Moiré patterns weave, Beauty in high fashions breath, Otherworldly sheathe, starry sky at earthrise, cinematic view, muted cinematic colors, cinematic lighting';
-        'Ultra Closeup, real photo, portrait of a $gender gender super model in grayscale who is $age year old, and has a $bodyType body type, bright spotlight, high contrast, symmetrical, vintage style, black and white, he is wearing a black highneck sweater, dramatic lighting, thick smoke coming from behind, realistic ';
+    // Update the prompt with dynamic values
+    final prompt = promptInput
+        .replaceAll('\$gender', gender)
+        .replaceAll('\$age', age)
+        .replaceAll('\$bodyType', bodyType);
 
     final request = ApiRequest(
       webhook: '', // Fill if required
@@ -101,6 +105,11 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
 
+    setState(() {
+      isGenerating = true;
+      hasGenerated = false;
+    });
+
     try {
       final response = await _apiService.generateImage(request);
 
@@ -112,22 +121,29 @@ class _HomeScreenState extends State<HomeScreen> {
             ? response.output.output[0]
             : null;
         if (imageUrl != null) {
-          _uploadImageFromUrl(imageUrl);
-          // Display or process the imageUrl
-          print('Generated Image URL: $imageUrl');
-          // Reset dropdowns to original values
+          final uploadedImageUrl = await _uploadImageFromUrl(imageUrl);
           setState(() {
             userData.imageUrl = initialImageUrl;
             userData.age = initialAge;
             userData.sex = initialSex;
             userData.bodyType = initialBodyType;
+            this.imageUrl = uploadedImageUrl;
+            // Add the new image to the list of image URLs
+            imageUrls.add(uploadedImageUrl);
+            isGenerating = false;
+            hasGenerated = true;
           });
         }
       } else {
+        setState(() {
+          isGenerating = false;
+        });
         print('Image generation failed.');
       }
     } catch (e) {
-      // Handle error here
+      setState(() {
+        isGenerating = false;
+      });
       print('API Response Error: $e');
     }
   }
@@ -201,11 +217,13 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.menu, color: Colors.white),
-            onPressed: () {
-              Scaffold.of(context).openEndDrawer();
-            },
+          Builder(
+            builder: (context) => IconButton(
+              icon: const Icon(Icons.menu, color: Colors.white),
+              onPressed: () {
+                Scaffold.of(context).openEndDrawer();
+              },
+            ),
           ),
         ],
       ),
@@ -227,8 +245,12 @@ class _HomeScreenState extends State<HomeScreen> {
               title: Text('Gallery',
                   style: GoogleFonts.poppins(color: Colors.white)),
               onTap: () {
-                // Handle gallery action
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => GalleryScreen()),
+                );
               },
+
             ),
             ListTile(
               title: Text('Subscription',
@@ -250,14 +272,42 @@ class _HomeScreenState extends State<HomeScreen> {
       body: Column(
         children: [
           Expanded(
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(40.0),
-                child: Text(
-                  "Add all the details, select a theme & hit Generate!",
-                  style:
-                      GoogleFonts.poppins(fontSize: 16.0, color: Colors.white),
-                  textAlign: TextAlign.center,
+            child: SingleChildScrollView(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(50.0),
+                  child: Column(
+                    children: [
+                      if (!isGenerating && !hasGenerated && imageUrls.isEmpty)
+                        Text(
+                          "Add all the details, select a theme & hit Generate!",
+                          style: GoogleFonts.poppins(
+                              fontSize: 16.0, color: Colors.white),
+                          textAlign: TextAlign.center,
+                        )
+                      else if (isGenerating)
+                        Column(
+                          children: [
+                            Image.asset('assets/loading_placeholder.png'),
+                            // Loading image placeholder
+                            SizedBox(height: 20),
+                            CircularProgressIndicator(),
+                          ],
+                        )
+                      else if (hasGenerated && imageUrls.isNotEmpty)
+                        Column(
+                          children: imageUrls.map((url) {
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 20.0),
+                              child: Image.network(
+                                url, // Display each image from the list
+                                fit: BoxFit.cover,
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -267,7 +317,7 @@ class _HomeScreenState extends State<HomeScreen> {
             height: 120,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
-              itemCount: imageUrls.length,
+              itemCount: assetImageUrls.length,
               itemBuilder: (context, index) {
                 return GestureDetector(
                   onTap: () {
@@ -284,7 +334,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(8.0),
                         image: DecorationImage(
-                          image: AssetImage(imageUrls[index]), // Use AssetImage
+                          image: AssetImage(assetImageUrls[index]),
+                          // Use AssetImage
                           fit: BoxFit.cover,
                         ),
                         border: Border.all(color: Colors.white, width: 2.0),
@@ -373,6 +424,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         onChanged: (value) {
                           setState(() {
                             userData.age = value;
+                            _generatePrompts();
                           });
                         },
                       ),
@@ -399,6 +451,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         onChanged: (value) {
                           setState(() {
                             userData.sex = value;
+                            _generatePrompts();
                           });
                         },
                       ),
@@ -431,6 +484,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         onChanged: (value) {
                           setState(() {
                             userData.bodyType = value;
+                            _generatePrompts();
                           });
                         },
                       ),
@@ -517,4 +571,42 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
+  void _generatePrompts() {
+    final age = userData.age;
+    final gender = userData.sex;
+    final bodyType = userData.bodyType;
+
+    if (age != null && gender != null && bodyType != null) {
+      // Generate multiple prompt variations based on user data
+      setState(() {
+        promptList = [
+          /*Prompt 1 */
+          'Ultra Closeup, real photo, portrait of a man super model in grayscale, bright spotlight, high contrast, symmetrical, vintage style, black and white, he is wearing a black highneck sweater, dramatic lighting, thick smoke coming from behind, realistic , a $gender , who is $age year old and has a $bodyType body type',
+          /*Prompt 2 */
+          'a closeup portrait,  headshot, a cinematic portrait, of a super model, Mixed eclectic beauty in complementary colors Moiré patterns weave, Beauty in high fashions breath, Otherworldly sheathe, starry sky at earthrise, cinematic view, muted cinematic colors, cinematic lighting , a $gender , who is $age year old and has a $bodyType body type',
+          /*Prompt 3 */
+          'a closeup portrait, headshot, a real photo, taken from LEICA, DSLR, award winning photo, professional photo, a female astronaut from the future, space scene, inside spaceship, spaceship  cinematic lighting, kinetic, smiling with lips closed, fixing the space ship, tools, detailed skin, detailed eyes, beautiful hair floating in space, futuristic space suit. , a $gender , who is $age year old and has a $bodyType body type',
+          /*Prompt 4 */
+          'a closeup portrait, headshot, a real photo, taken from LEICA, DSLR, award winning photo, professional photo, a male astronaut from the future, space scene, inside spaceship, spaceship  cinematic lighting, kinetic, smiling with lips closed, fixing the space ship, tools, detailed skin, detailed eyes, beautiful hair floating in space, futuristic space suit. , a $gender , who is $age year old and has a $bodyType body type',
+          /*Prompt 5 */
+          'real closeup portrait photo, headshot, detailed skin, hyperreal, DSLR, LEICA, lens noise, (Intricate details:1.2), (Realistic), (masterpiece), (photograph), Cinema Lighting，jsschnwckcw woman with hair made of fire wearing high-necked shirt ,  glass shards, space fragmentation, rmessy hair, serious, glowing hand, surreal, upper body, dynamic pose, Travel through time and space, silver white theme, ultra highres, sharpness texture, High detail RAW Photo, detailed face , a $gender , who is $age year old and has a $bodyType body type',
+          /*Prompt 6 */
+          'a closeup portrait, headshot, High fashion symmetrical portrait shoot in an Urban Graffiti of a female supermodel wearing bold reflective glasses, in the style of curved mirrors, ultra realistic, bold, cartoonish lines, neoclassical style, filip hodas, moody color schemes, postmodern bricolage, sculptural aesthetics, anamorphic lens, hyper detailed, rainbow-core, bubblegum , a $gender , who is $age year old and has a $bodyType body type',
+          /*Prompt 7 */
+          'a closeup portrait, headshot, High fashion symmetrical portrait shoot in an Urban Graffiti of a male supermodel wearing bold reflective glasses, in the style of curved mirrors, ultra realistic, bold, cartoonish lines, neoclassical style, filip hodas, moody color schemes, postmodern bricolage, sculptural aesthetics, anamorphic lens, hyper detailed, rainbow-core, bubblegum , a $gender , who is $age year old and has a $bodyType body type',
+          /*Prompt 8 */
+          'A nike ad, closeup headshot photo of Alex Morgan (her back to the camera:1.2), smiling, (looking to the right:1.2), wearing red shirt, flash photo, (light flashing on face:1.2), (black background:1.2), studio, looking to the right, sharp, 32k, Nikon Z7, 35mm f/1.4, f/2.8, deep focus, studio photo, LEICA, DSRL, 32 k, depth of field, cinematic color grading, volumetric light, particles, dust, film grain, film noise, movie poster. hdr, dslr, master piece, perfect eyes, detailed lips, detailed hair, detailed skin, , a $gender , who is $age year old and has a $bodyType body type',
+          /*Prompt 9 */
+          'detailed eyes, detailed face, Editorial Photography | EMOTION: Celestial Canvas | SCENE: A mesmerizing top-down view capturing an expansive canvas of blue and red clouds in a celestial dance, creating a dreamy atmosphere during a cosmic dawn | TAGS: 32k, Nikon Z7, 35mm f/1.4, f/2.8, celestial canvas details, deep focus, dreamlike shading photography, surreal composition shot, cosmic color grading, cosmic lighting, ethereal atmosphere, 2023, modern style, soft textures, fantasy color palette, celestial construction materials, cosmic location, dreamlike objects, ISO 400 and insidecloseup photography handsome man wearing high neck, studio photo, LEICA, DSRL, 32 k, backstage photography in high definition formation, hyperrealistic, photorealistic, in the style of futuristic digital art, blurred, dreamlike atmosphere, minimalist backgrounds, national geographic photo, golden light, slender, faith-inspired art , a $gender , who is $age year old and has a $bodyType body type',
+        ];
+      });
+    } else {
+      // Reset promptInput if user data is incomplete
+      setState(() {
+        promptList = [];
+      });
+    }
+  }
+
 }
