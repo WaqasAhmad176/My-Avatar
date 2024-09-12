@@ -53,9 +53,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   bool isGenerating = false;
   bool hasGenerated = false;
+  bool isAgeDropdownEnabled = false;
+  bool isSexDropdownEnabled = false;
+  bool isBodyTypeDropdownEnabled = false;
   String? imageUrl;
 
   int selectedIndex = -1;
+
 
   void _onGenerateButtonPressed(BuildContext context) async {
     if (userData.imageUrl == null || userData.imageUrl!.isEmpty) {
@@ -135,6 +139,7 @@ class _HomeScreenState extends State<HomeScreen> {
             imageUrls.add(uploadedImageUrl);
             isGenerating = false;
             hasGenerated = true;
+            isAgeDropdownEnabled = true;
           });
         }
       } else {
@@ -195,6 +200,11 @@ class _HomeScreenState extends State<HomeScreen> {
     initialAge = userData.age;
     initialSex = userData.sex;
     initialBodyType = userData.bodyType;
+
+    // Initially disable age, sex, and body type dropdowns
+    isAgeDropdownEnabled = false;
+    isSexDropdownEnabled = false;
+    isBodyTypeDropdownEnabled = false;
   }
 
   @override
@@ -372,10 +382,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           fit: BoxFit.cover,
                         ),
                         border: Border.all(
-                          color: selectedIndex == index
-                              ? Colors.white
-                              : Colors
-                                  .transparent, // Apply border conditionally
+                          color: selectedIndex == index ? Colors.white : Colors.transparent, // Apply border conditionally
                           width: 2.0,
                         ),
                       ),
