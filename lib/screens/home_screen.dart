@@ -5,6 +5,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart'; // For formatting the current time
 import 'package:my_avatar/screens/custom_camera_screen.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
@@ -53,6 +54,8 @@ class _HomeScreenState extends State<HomeScreen> {
   bool isGenerating = false;
   bool hasGenerated = false;
   String? imageUrl;
+
+  int selectedIndex = -1;
 
   void _onGenerateButtonPressed(BuildContext context) async {
     if (userData.imageUrl == null || userData.imageUrl!.isEmpty) {
@@ -250,7 +253,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   MaterialPageRoute(builder: (context) => GalleryScreen()),
                 );
               },
-
             ),
             ListTile(
               title: Text('Subscription',
@@ -275,7 +277,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: SingleChildScrollView(
               child: Center(
                 child: Padding(
-                  padding: const EdgeInsets.all(50.0),
+                  padding: const EdgeInsets.all(40.0),
                   child: Column(
                     children: [
                       if (!isGenerating && !hasGenerated && imageUrls.isEmpty)
@@ -295,16 +297,46 @@ class _HomeScreenState extends State<HomeScreen> {
                           ],
                         )
                       else if (hasGenerated && imageUrls.isNotEmpty)
+                        // Display images with time above each image
                         Column(
-                          children: imageUrls.map((url) {
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 20.0),
-                              child: Image.network(
-                                url, // Display each image from the list
-                                fit: BoxFit.cover,
-                              ),
-                            );
-                          }).toList(),
+                          children: [
+                            // Map through the imageUrls list and display each image with a time stamp
+                            ...imageUrls.map((url) {
+                              return Column(
+                                children: [
+                                  // Display the current time above each image
+                                  Padding(
+                                    padding:
+                                        const EdgeInsets.only(bottom: 10.0),
+                                    child: Text(
+                                      DateFormat('kk:mm')
+                                          .format(DateTime.now()),
+                                      // Format the current time
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16.0,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  // Display each image with rounded corners
+                                  Padding(
+                                    padding:
+                                        const EdgeInsets.only(bottom: 40.0),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(16.0),
+                                      // Add rounded corners to the image
+                                      child: Image.network(
+                                        url,
+                                        // Display each image from the list
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            }).toList(),
+                          ],
                         ),
                     ],
                   ),
@@ -322,6 +354,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 return GestureDetector(
                   onTap: () {
                     setState(() {
+                      selectedIndex = index; // Update the selected index
                       promptInput = promptList[index];
                     });
                     print('Selected prompt: $promptInput');
@@ -338,7 +371,13 @@ class _HomeScreenState extends State<HomeScreen> {
                           // Use AssetImage
                           fit: BoxFit.cover,
                         ),
-                        border: Border.all(color: Colors.white, width: 2.0),
+                        border: Border.all(
+                          color: selectedIndex == index
+                              ? Colors.white
+                              : Colors
+                                  .transparent, // Apply border conditionally
+                          width: 2.0,
+                        ),
                       ),
                     ),
                   ),
@@ -346,7 +385,7 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 10),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Column(
@@ -608,5 +647,4 @@ class _HomeScreenState extends State<HomeScreen> {
       });
     }
   }
-
 }
