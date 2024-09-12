@@ -281,11 +281,12 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: Column(
         children: [
+          // this is for Vertical Images Generated Scroll
           Expanded(
             child: SingleChildScrollView(
               child: Center(
                 child: Padding(
-                  padding: const EdgeInsets.all(40.0),
+                  padding: const EdgeInsets.all(30.0),
                   child: Column(
                     children: [
                       if (!isGenerating && !hasGenerated && imageUrls.isEmpty)
@@ -298,11 +299,46 @@ class _HomeScreenState extends State<HomeScreen> {
                       else if (isGenerating)
                         Column(
                           children: [
+                            ...imageUrls.map((url) {
+                              return Column(
+                                children: [
+                                  // Display the current time above each image
+                                  Padding(
+                                    padding:
+                                    const EdgeInsets.only(bottom: 10.0),
+                                    child: Text(
+                                      DateFormat('kk:mm')
+                                          .format(DateTime.now()),
+                                      // Format the current time
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16.0,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  // Display each image with rounded corners
+                                  Padding(
+                                    padding:
+                                    const EdgeInsets.only(bottom: 40.0),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(16.0),
+                                      // Add rounded corners to the image
+                                      child: Image.network(
+                                        url,
+                                        // Display each image from the list
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            }),
                             Image.asset('assets/loading_placeholder.png'),
                             // Loading image placeholder
                             SizedBox(height: 20),
-                            CircularProgressIndicator(),
                           ],
+
                         )
                       else if (hasGenerated && imageUrls.isNotEmpty)
                         // Display images with time above each image
@@ -353,72 +389,75 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           // Horizontal Scroll View for the images
-          SizedBox(
-            height: 120,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: assetImageUrls.length,
-              itemBuilder: (context, index) {
-                bool isLocked =
-                    index >= 2; // Lock images starting from the third one
-                return GestureDetector(
-                  onTap: () {
-                    if (!isLocked) {
-                      setState(() {
-                        selectedIndex = index; // Update the selected index
-                        promptInput = promptList[index];
-                      });
-                      print('Selected prompt: $promptInput');
-                    }
-                  },
-                  child: Stack(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Container(
-                          width: 100,
-                          height: 100,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8.0),
-                            image: DecorationImage(
-                              image: AssetImage(assetImageUrls[index]),
-                              fit: BoxFit.cover,
-                            ),
-                            border: Border.all(
-                              color: selectedIndex == index
-                                  ? Colors.white
-                                  : Colors.transparent,
-                              // Apply border conditionally
-                              width: 2.0,
-                            ),
-                          ),
-                          child: isLocked
-                              ? Container(
-                                  color:
-                                      const Color(0xFF201D1D).withOpacity(0.2),
-                                  // Shade color
-                                  child: const Center(
-                                    child: Icon(
-                                      Icons.lock,
-                                      color: Colors.white,
-                                      size: 20,
-                                    ),
-                                  ),
-                                )
-                              : null,
-                        ),
-                      ),
-                      if (isLocked)
-                        Positioned.fill(
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10.0),
+            child: SizedBox(
+              height: 120,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: assetImageUrls.length,
+                itemBuilder: (context, index) {
+                  bool isLocked =
+                      index >= 2; // Lock images starting from the third one
+                  return GestureDetector(
+                    onTap: () {
+                      if (!isLocked) {
+                        setState(() {
+                          selectedIndex = index; // Update the selected index
+                          promptInput = promptList[index];
+                        });
+                        print('Selected prompt: $promptInput');
+                      }
+                    },
+                    child: Stack(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
                           child: Container(
-                            color: const Color(0xFF201D1D)
-                                .withOpacity(0.7), // Overlay shade color
+                            width: 100,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8.0),
+                              image: DecorationImage(
+                                image: AssetImage(assetImageUrls[index]),
+                                fit: BoxFit.cover,
+                              ),
+                              border: Border.all(
+                                color: selectedIndex == index
+                                    ? Colors.white
+                                    : Colors.transparent,
+                                // Apply border conditionally
+                                width: 2.0,
+                              ),
+                            ),
+                            child: isLocked
+                                ? Container(
+                                    color:
+                                        const Color(0xFF201D1D).withOpacity(0.2),
+                                    // Shade color
+                                    child: const Center(
+                                      child: Icon(
+                                        Icons.lock,
+                                        color: Colors.white,
+                                        size: 20,
+                                      ),
+                                    ),
+                                  )
+                                : null,
                           ),
                         ),
-                    ],
-                  ),
-                );
-              },
+                        if (isLocked)
+                          Positioned.fill(
+                            child: Container(
+                              color: const Color(0xFF201D1D)
+                                  .withOpacity(0.7), // Overlay shade color
+                            ),
+                          ),
+                      ],
+                    ),
+                  );
+                },
+              ),
             ),
           ),
           const SizedBox(height: 10),
