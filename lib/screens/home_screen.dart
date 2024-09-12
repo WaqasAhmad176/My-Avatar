@@ -57,9 +57,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool isSexDropdownEnabled = false;
   bool isBodyTypeDropdownEnabled = false;
   String? imageUrl;
-
   int selectedIndex = -1;
-
 
   void _onGenerateButtonPressed(BuildContext context) async {
     if (userData.imageUrl == null || userData.imageUrl!.isEmpty) {
@@ -295,7 +293,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           "Add all the details, select a theme & hit Generate!",
                           style: GoogleFonts.poppins(
                               fontSize: 16.0, color: Colors.white),
-                          textAlign: TextAlign.center,
+                          textAlign: TextAlign.center ,
                         )
                       else if (isGenerating)
                         Column(
@@ -361,32 +359,63 @@ class _HomeScreenState extends State<HomeScreen> {
               scrollDirection: Axis.horizontal,
               itemCount: assetImageUrls.length,
               itemBuilder: (context, index) {
+                bool isLocked =
+                    index >= 2; // Lock images starting from the third one
                 return GestureDetector(
                   onTap: () {
-                    setState(() {
-                      selectedIndex = index; // Update the selected index
-                      promptInput = promptList[index];
-                    });
-                    print('Selected prompt: $promptInput');
+                    if (!isLocked) {
+                      setState(() {
+                        selectedIndex = index; // Update the selected index
+                        promptInput = promptList[index];
+                      });
+                      print('Selected prompt: $promptInput');
+                    }
                   },
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8.0),
-                        image: DecorationImage(
-                          image: AssetImage(assetImageUrls[index]),
-                          // Use AssetImage
-                          fit: BoxFit.cover,
-                        ),
-                        border: Border.all(
-                          color: selectedIndex == index ? Colors.white : Colors.transparent, // Apply border conditionally
-                          width: 2.0,
+                  child: Stack(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Container(
+                          width: 100,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8.0),
+                            image: DecorationImage(
+                              image: AssetImage(assetImageUrls[index]),
+                              fit: BoxFit.cover,
+                            ),
+                            border: Border.all(
+                              color: selectedIndex == index
+                                  ? Colors.white
+                                  : Colors.transparent,
+                              // Apply border conditionally
+                              width: 2.0,
+                            ),
+                          ),
+                          child: isLocked
+                              ? Container(
+                                  color:
+                                      const Color(0xFF201D1D).withOpacity(0.2),
+                                  // Shade color
+                                  child: const Center(
+                                    child: Icon(
+                                      Icons.lock,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
+                                  ),
+                                )
+                              : null,
                         ),
                       ),
-                    ),
+                      if (isLocked)
+                        Positioned.fill(
+                          child: Container(
+                            color: const Color(0xFF201D1D)
+                                .withOpacity(0.7), // Overlay shade color
+                          ),
+                        ),
+                    ],
                   ),
                 );
               },
