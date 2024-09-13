@@ -15,12 +15,31 @@ class _GalleryScreenState extends State<GalleryScreen> {
   bool isLoading = false;
   bool hasMore = true;
   String? lastFile; // Used to paginate
-  int limit = 9; // Number of images to load per page
+  int limit = 24; // Number of images to load per page
+
+  final ScrollController _scrollController =
+      ScrollController(); // Add scroll controller
 
   @override
   void initState() {
     super.initState();
     _loadImages();
+
+    // Listen to the scroll position to trigger pagination
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels ==
+          _scrollController.position.maxScrollExtent) {
+        // Load more images when scrolled to the bottom
+        _loadImages();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController
+        .dispose(); // Clean up the controller when the screen is disposed
+    super.dispose();
   }
 
   Future<void> _loadImages() async {
@@ -38,14 +57,23 @@ class _GalleryScreenState extends State<GalleryScreen> {
 
     if (lastFile == null) {
       // Initial load
+      print('lastfile == null');
       result = await storageRef.list(ListOptions(maxResults: limit));
     } else {
+      print('lastfile == notnull');
+
       // Paginate - continue from the last loaded file
       result = await storageRef
           .list(ListOptions(maxResults: limit, pageToken: lastFile));
     }
 
+    print('result1 =++====== ${result}');
+    print(result);
+    print('last file=== ${result.nextPageToken}');
+
     if (result.items.isNotEmpty) {
+      print('result ======= ${result}');
+
       List<String> newImageUrls = [];
       for (var item in result.items) {
         String downloadUrl = await item.getDownloadURL();
@@ -56,13 +84,12 @@ class _GalleryScreenState extends State<GalleryScreen> {
         imageUrls.addAll(newImageUrls);
         lastFile = result.nextPageToken; // For pagination
         if (newImageUrls.length < limit) {
-          hasMore =
-              false; // If fewer images than the limit are loaded, stop loading
+          hasMore = false; // No more images to load
         }
       });
     } else {
       setState(() {
-        hasMore = false;
+        hasMore = false; // No more images available
       });
     }
 
@@ -89,8 +116,11 @@ class _GalleryScreenState extends State<GalleryScreen> {
       body: Padding(
         padding: const EdgeInsets.all(8.0),
         child: GridView.builder(
+          controller: _scrollController,
+          // Attach the scroll controller
           itemCount: imageUrls.length + (hasMore ? 1 : 0),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          // Add a loader at the end if more images are available
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 3, // 3 images per row
             mainAxisSpacing: 10,
             crossAxisSpacing: 10,
@@ -98,8 +128,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
           itemBuilder: (context, index) {
             if (index == imageUrls.length) {
               // Show loading indicator at the bottom
-              _loadImages();
-              return Center(
+              return const Center(
                 child: CircularProgressIndicator(),
               );
             }

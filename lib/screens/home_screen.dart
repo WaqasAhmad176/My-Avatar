@@ -35,6 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   String promptInput = ''; // This will hold the predefined prompt string
   List<String> imageUrls = []; // List to store multiple generated image URLs
+  List<Map<String, dynamic>> imagesWithTimestamps = [];
   List<String> assetImageUrls = [
     // Replace with your actual image URLs
     'assets/prompt_1.png',
@@ -58,6 +59,27 @@ class _HomeScreenState extends State<HomeScreen> {
   bool isBodyTypeDropdownEnabled = false;
   String? imageUrl;
   int selectedIndex = -1;
+
+  final ScrollController _scrollController = ScrollController();
+
+  void _scrollToBottom() {
+    // Use addPostFrameCallback to ensure the layout is built before scrolling
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent, // Scroll to the end
+        duration: const Duration(milliseconds: 500),
+        // Set duration for smooth scroll
+        curve: Curves.easeInOut, // Scrolling animation curve
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    // Dispose of the ScrollController when not in use
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   void _onGenerateButtonPressed(BuildContext context) async {
     if (userData.imageUrl == null || userData.imageUrl!.isEmpty) {
@@ -134,10 +156,12 @@ class _HomeScreenState extends State<HomeScreen> {
             userData.bodyType = initialBodyType;
             this.imageUrl = uploadedImageUrl;
             // Add the new image to the list of image URLs
-            imageUrls.add(uploadedImageUrl);
+            // imageUrls.add(uploadedImageUrl);
+            addImage(uploadedImageUrl);
             isGenerating = false;
             hasGenerated = true;
             isAgeDropdownEnabled = true;
+            _scrollToBottom(); // Automatically scroll to bottom on press
           });
         }
       } else {
@@ -155,13 +179,20 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<String> _uploadImageFromUrl(String imageUrl) async {
-    String fileName = const Uuid().v4();
+    // Get a UUID for the file
+    String uuid = const Uuid().v4();
 
     // Get the current user
     User? currentUser = FirebaseAuth.instance.currentUser;
     print("CurrentUser=== $currentUser");
 
-    // Create a reference to Firebase Storage
+    // Get the current timestamp in a human-readable format (e.g., YYYYMMDD_HHMMSS)
+    String timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+
+    // Create the file name using the timestamp and UUID
+    String fileName = '$timestamp-$uuid';
+
+    // Create a reference to Firebase Storage with the timestamp in the file name
     Reference firebaseStorageRef = FirebaseStorage.instance
         .ref()
         .child('${currentUser?.uid}/generated_images/$fileName.jpg');
@@ -188,6 +219,14 @@ class _HomeScreenState extends State<HomeScreen> {
     } else {
       throw Exception('Failed to download image from URL');
     }
+  }
+
+  // When adding a new image, save the URL and the generation time fro scroll view vertical
+  void addImage(String url) {
+    imagesWithTimestamps.add({
+      'url': url,
+      'timestamp': DateTime.now(), // Store the generation time
+    });
   }
 
   @override
@@ -238,43 +277,103 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
+      // drawer
       endDrawer: Drawer(
-        backgroundColor: Colors.black,
-        child: ListView(
-          padding: EdgeInsets.zero,
+        backgroundColor: const Color(0xFF201D1D),
+        elevation: 32.0, // Add elevation to the drawer
+        width: MediaQuery.of(context).size.width *
+            0.6, // Set drawer width to 60% of screen width
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          // Ensure items are spaced, with 'Hello' at the bottom
           children: <Widget>[
-            DrawerHeader(
-              decoration: BoxDecoration(
-                color: Colors.grey[850],
+            ListView(
+              shrinkWrap: true, // Wrap content inside the ListView
+              padding: EdgeInsets.symmetric(
+                vertical: MediaQuery.of(context).size.height *
+                    0.05, // Set padding relative to screen height
               ),
+              children: <Widget>[
+                // Close button at the top-right corner
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white),
+                      onPressed: () {
+                        Navigator.of(context).pop(); // Close the drawer
+                      },
+                    ),
+                  ],
+                ),
+
+                // List tiles with right-aligned text, font sizes made responsive
+                ListTile(
+                  title: Align(
+                    alignment: Alignment.centerRight, // Align text to the right
+                    child: Text(
+                      'Gallery',
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontSize: MediaQuery.of(context).size.height *
+                            0.020, // Responsive font size
+                      ),
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => GalleryScreen()),
+                    );
+                  },
+                ),
+                ListTile(
+                  title: Align(
+                    alignment: Alignment.centerRight, // Align text to the right
+                    child: Text(
+                      'Subscription',
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontSize: MediaQuery.of(context).size.height *
+                            0.020, // Responsive font size
+                      ),
+                    ),
+                  ),
+                  onTap: () {
+                    // Handle subscription action
+                  },
+                ),
+                ListTile(
+                  title: Align(
+                    alignment: Alignment.centerRight, // Align text to the right
+                    child: Text(
+                      'About Us',
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontSize: MediaQuery.of(context).size.height *
+                            0.020, // Responsive font size
+                      ),
+                    ),
+                  ),
+                  onTap: () {
+                    // Handle about us action
+                  },
+                ),
+              ],
+            ),
+
+            // 'Hello' text at the bottom
+            Padding(
+              padding: EdgeInsets.only(bottom: 20.0),
+              // Add padding to the bottom
               child: Text(
-                'Menu',
-                style: GoogleFonts.poppins(color: Colors.white, fontSize: 24),
+                'All Rights Reserved, MyAvatar by Musavir.AI, 2024',
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontSize: MediaQuery.of(context).size.height *
+                      0.009, // Responsive font size
+                ),
               ),
-            ),
-            ListTile(
-              title: Text('Gallery',
-                  style: GoogleFonts.poppins(color: Colors.white)),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => GalleryScreen()),
-                );
-              },
-            ),
-            ListTile(
-              title: Text('Subscription',
-                  style: GoogleFonts.poppins(color: Colors.white)),
-              onTap: () {
-                // Handle subscription action
-              },
-            ),
-            ListTile(
-              title: Text('About Us',
-                  style: GoogleFonts.poppins(color: Colors.white)),
-              onTap: () {
-                // Handle about us action
-              },
             ),
           ],
         ),
@@ -284,6 +383,7 @@ class _HomeScreenState extends State<HomeScreen> {
           // this is for Vertical Images Generated Scroll
           Expanded(
             child: SingleChildScrollView(
+              controller: _scrollController, // Assign ScrollController here
               child: Center(
                 child: Padding(
                   padding: const EdgeInsets.all(30.0),
@@ -294,68 +394,22 @@ class _HomeScreenState extends State<HomeScreen> {
                           "Add all the details, select a theme & hit Generate!",
                           style: GoogleFonts.poppins(
                               fontSize: 16.0, color: Colors.white),
-                          textAlign: TextAlign.center ,
+                          textAlign: TextAlign.center,
                         )
                       else if (isGenerating)
                         Column(
                           children: [
-                            ...imageUrls.map((url) {
+                            ...imagesWithTimestamps.map((imageData) {
                               return Column(
                                 children: [
-                                  // Display the current time above each image
-                                  Padding(
-                                    padding:
-                                    const EdgeInsets.only(bottom: 10.0),
-                                    child: Text(
-                                      DateFormat('kk:mm')
-                                          .format(DateTime.now()),
-                                      // Format the current time
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16.0,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                  // Display each image with rounded corners
-                                  Padding(
-                                    padding:
-                                    const EdgeInsets.only(bottom: 40.0),
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(16.0),
-                                      // Add rounded corners to the image
-                                      child: Image.network(
-                                        url,
-                                        // Display each image from the list
-                                        fit: BoxFit.cover,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              );
-                            }),
-                            Image.asset('assets/loading_placeholder.png'),
-                            // Loading image placeholder
-                            SizedBox(height: 20),
-                          ],
-
-                        )
-                      else if (hasGenerated && imageUrls.isNotEmpty)
-                        // Display images with time above each image
-                        Column(
-                          children: [
-                            // Map through the imageUrls list and display each image with a time stamp
-                            ...imageUrls.map((url) {
-                              return Column(
-                                children: [
-                                  // Display the current time above each image
+                                  // Display the timestamp for the current image
                                   Padding(
                                     padding:
                                         const EdgeInsets.only(bottom: 10.0),
                                     child: Text(
                                       DateFormat('kk:mm')
-                                          .format(DateTime.now()),
-                                      // Format the current time
+                                          .format(imageData['timestamp']),
+                                      // Use the stored timestamp
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 16.0,
@@ -371,7 +425,52 @@ class _HomeScreenState extends State<HomeScreen> {
                                       borderRadius: BorderRadius.circular(16.0),
                                       // Add rounded corners to the image
                                       child: Image.network(
-                                        url,
+                                        imageData['url'],
+                                        // Display each image from the list
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            }).toList(),
+                            Image.asset('assets/loading_placeholder.png'),
+                            // Loading image placeholder
+                            SizedBox(height: 20),
+                          ],
+                        )
+                      else if (hasGenerated && imageUrls.isNotEmpty)
+                        // Display images with time above each image
+                        Column(
+                          children: [
+                            // Map through the imagesWithTimestamps list and display each image with its timestamp
+                            ...imagesWithTimestamps.map((imageData) {
+                              return Column(
+                                children: [
+                                  // Display the timestamp for the current image
+                                  Padding(
+                                    padding:
+                                        const EdgeInsets.only(bottom: 10.0),
+                                    child: Text(
+                                      DateFormat('kk:mm')
+                                          .format(imageData['timestamp']),
+                                      // Use the stored timestamp
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16.0,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  // Display each image with rounded corners
+                                  Padding(
+                                    padding:
+                                        const EdgeInsets.only(bottom: 40.0),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(16.0),
+                                      // Add rounded corners to the image
+                                      child: Image.network(
+                                        imageData['url'],
                                         // Display each image from the list
                                         fit: BoxFit.cover,
                                       ),
@@ -399,9 +498,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 itemBuilder: (context, index) {
                   bool isLocked =
                       index >= 2; // Lock images starting from the third one
+                  bool isBodyTypeSelected = userData.bodyType != null &&
+                      userData.bodyType!.isNotEmpty;
+
+                  // Disable the first two prompts if bodyType is not selected
+                  bool isDisabled = index < 2 && !isBodyTypeSelected;
+
                   return GestureDetector(
                     onTap: () {
-                      if (!isLocked) {
+                      // Only handle tap if not locked and not disabled
+                      if (!isLocked && !isDisabled) {
                         setState(() {
                           selectedIndex = index; // Update the selected index
                           promptInput = promptList[index];
@@ -423,34 +529,41 @@ class _HomeScreenState extends State<HomeScreen> {
                                 fit: BoxFit.cover,
                               ),
                               border: Border.all(
-                                color: selectedIndex == index
+                                color: selectedIndex == index && !isDisabled
                                     ? Colors.white
                                     : Colors.transparent,
-                                // Apply border conditionally
+                                // Only add border if it's selected and not disabled
                                 width: 2.0,
                               ),
                             ),
-                            child: isLocked
-                                ? Container(
-                                    color:
-                                        const Color(0xFF201D1D).withOpacity(0.2),
-                                    // Shade color
-                                    child: const Center(
-                                      child: Icon(
-                                        Icons.lock,
-                                        color: Colors.white,
-                                        size: 20,
-                                      ),
-                                    ),
-                                  )
-                                : null,
                           ),
                         ),
                         if (isLocked)
                           Positioned.fill(
                             child: Container(
-                              color: const Color(0xFF201D1D)
-                                  .withOpacity(0.7), // Overlay shade color
+                              color: const Color(0xFF201D1D).withOpacity(0.5),
+                              // Apply the overlay shade on locked images
+                            ),
+                          ),
+                        if (!isBodyTypeSelected)
+                          Positioned.fill(
+                            child: Container(
+                              color: const Color(0xFF201D1D).withOpacity(0.4),
+                              // Apply the overlay shade on locked images
+                            ),
+                          ),
+                        if (isLocked)
+                          Positioned.fill(
+                            child: Container(
+                              color: const Color(0xFF201D1D).withOpacity(0.2),
+                              // Apply lock icon overlay on locked images
+                              child: const Center(
+                                child: Icon(
+                                  Icons.lock,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                              ),
                             ),
                           ),
                       ],
@@ -469,6 +582,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
+                    // Selfie Dropdown
                     Expanded(
                       child: _buildDropdownButton(
                         context,
@@ -519,12 +633,17 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     const SizedBox(width: 8),
+
+                    // Age Dropdown (Enabled after Selfie is selected)
                     Expanded(
                       child: _buildDropdownButton(
                         context,
                         label: userData.age != null && userData.age!.isNotEmpty
                             ? userData.age
                             : "Age",
+                        enabled: userData.imageUrl != null &&
+                            userData.imageUrl!.isNotEmpty,
+                        // Enabled only if selfie is selected
                         items: List.generate(
                           100,
                           (index) => DropdownMenuItem(
@@ -544,12 +663,17 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     const SizedBox(width: 8),
+
+                    // Sex Dropdown (Enabled after Age is selected)
                     Expanded(
                       child: _buildDropdownButton(
                         context,
                         label: userData.sex != null && userData.sex!.isNotEmpty
                             ? userData.sex!
                             : "Sex",
+                        enabled:
+                            userData.age != null && userData.age!.isNotEmpty,
+                        // Enabled only if age is selected
                         items: const [
                           DropdownMenuItem(
                             value: 'M',
@@ -571,6 +695,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     const SizedBox(width: 8),
+
+                    // Body Type Dropdown (Enabled after Sex is selected)
                     Expanded(
                       child: _buildDropdownButton(
                         context,
@@ -578,6 +704,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                 userData.bodyType!.isNotEmpty
                             ? userData.bodyType!
                             : "Body",
+                        enabled:
+                            userData.sex != null && userData.sex!.isNotEmpty,
+                        // Enabled only if sex is selected
                         items: const [
                           DropdownMenuItem(
                             value: 'Slim',
@@ -612,6 +741,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: ElevatedButton(
                     onPressed: () {
                       _onGenerateButtonPressed(context);
+                      _scrollToBottom(); // Automatically scroll to bottom on press
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFFFFFFF),
@@ -656,6 +786,8 @@ class _HomeScreenState extends State<HomeScreen> {
     required dynamic label,
     required List<DropdownMenuItem<String>> items,
     required ValueChanged<String?> onChanged,
+    bool enabled =
+        true, // Add the enabled property with a default value of true
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -672,16 +804,27 @@ class _HomeScreenState extends State<HomeScreen> {
                 )
               : label,
         ),
-        items: items,
-        onChanged: onChanged,
+        items: enabled ? items : null,
+        // Disable items if not enabled
+        onChanged: enabled ? onChanged : null,
+        // Disable interaction if not enabled
         dropdownColor: Colors.grey[850],
         iconEnabledColor: Colors.white,
         isExpanded: true,
-        // Ensure the dropdown takes up the available space
         underline: Container(),
         style: GoogleFonts.poppins(color: Colors.white),
-        menuMaxHeight: MediaQuery.of(context).size.height /
-            2, // Limit the dropdown height to half the screen
+        menuMaxHeight: MediaQuery.of(context).size.height / 2,
+        disabledHint: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+          child: label is String
+              ? Text(
+                  label,
+                  style: GoogleFonts.poppins(
+                      color: Colors.white
+                          .withOpacity(0.5)), // Make the text appear disabled
+                )
+              : label,
+        ),
       ),
     );
   }

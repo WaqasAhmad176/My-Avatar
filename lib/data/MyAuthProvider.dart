@@ -10,6 +10,10 @@ class MyAuthProvider {
 
   Stream<User?> get authStateChanges => _firebaseAuth.authStateChanges();
 
+
+  // credit getter setter and count variable
+
+
   Future<UserCredential> signInWithGoogle() async {
     final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
     final GoogleSignInAuthentication? googleAuth =
