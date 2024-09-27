@@ -117,9 +117,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
         padding: const EdgeInsets.all(8.0),
         child: GridView.builder(
           controller: _scrollController,
-          // Attach the scroll controller
           itemCount: imageUrls.length + (hasMore ? 1 : 0),
-          // Add a loader at the end if more images are available
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 3, // 3 images per row
             mainAxisSpacing: 10,
@@ -133,9 +131,13 @@ class _GalleryScreenState extends State<GalleryScreen> {
               );
             }
 
-            return Image.network(
-              imageUrls[index],
-              fit: BoxFit.cover,
+            return ClipRRect(
+              borderRadius: BorderRadius.circular(16.0),
+              // Apply rounded corners
+              child: Image.network(
+                imageUrls[index],
+                fit: BoxFit.cover,
+              ),
             );
           },
         ),

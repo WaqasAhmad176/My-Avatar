@@ -27,10 +27,12 @@ dependencies:
   firebase_storage: ^11.7.7
   uuid: 4.5.0
   json_annotation: ^4.9.0
-  http: 1.2.2
   cached_network_image: ^3.4.0
-  path_provider: ^2.1.4
   intl: ^0.19.0
+  dio: ^4.0.0
+  flutter_file_dialog: ^2.0.0 # or the latest version
+  path_provider: ^2.0.0       # Required for accessing temporary directory
+  http: ^1.0.0
 
 dev_dependencies:
   flutter_test:
