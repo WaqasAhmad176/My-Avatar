@@ -137,7 +137,7 @@ class LoginScreen extends StatelessWidget {
                   SizedBox(height: screenHeight * 0.04),
                   ElevatedButton.icon(
                     onPressed: () async {
-                      // TODO to uncomment this and solve google sign-in method
+
                       try {
                         UserCredential userCredential =
                         await MyAuthProvider().signInWithGoogle();
@@ -150,8 +150,7 @@ class LoginScreen extends StatelessWidget {
                         print("Error signing in with Google: $e");
                       }
 
-                   /*   // TODO to remove this and solve google sign-in method
-                      Get.offNamed(AppRoutes.home);*/
+
                     },
                     icon: Image.asset('assets/google_logo.webp',
                         width: screenWidth * 0.06, height: screenWidth * 0.06),
